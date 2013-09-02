@@ -1,0 +1,320 @@
+<html>
+<head>
+  <script src="scripts/jquery-1.9.0.min.js" type="text/javascript"></script>
+  <style>
+    td { padding: 0px 9px 0px 9px; }
+    td.nowrap { white-space: nowrap; }
+    td.null { }
+    tr.bgblack { background-color: #000; }
+  </style>
+</head>
+
+<body>
+
+<table>
+  <tr>
+    <td>
+      Enter floating point number here:
+    </td>
+    <td>
+      <input type="text" id="float" value="12.34">
+    </td>
+  </tr>
+  <tr>
+    <td>
+      and then click [Evaluate] here:
+    </td>
+    <td>
+      <input type="button" id="evaluate" value="Evaluate">
+    </td>
+  </tr>
+</table>
+<hr>
+
+<table border="1">
+  <thead>
+    <tr>
+      <th>Bit(s)</th>
+      <th>Sign</th>
+      <th>Exponent+127</th>
+      <th>Mantissa</th>
+      <th>"LSW"</th>
+      <th>"MSW"</th>
+      <th>Value at start</th>
+      <th>Process step description</th>
+      <th>Value at end</th>
+    </tr>
+  </thead>
+  <tbody id="floatingbits">
+  </tbody>
+</table>
+<hr>
+<hr>
+<table>
+  <tr>
+    <td>
+      Enter LSW, as 16-bit decimal integer, here:
+    </td>
+    <td>
+      <input type="text" id="lsw" value="16709">
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Enter MSW, as 16-bit decimal integer, here:
+    </td>
+    <td>
+      <input type="text" id="msw" value="28836">
+    </td>
+  </tr>
+  <tr>
+    <td>
+      and then click [Evaluate MSW/LSW] here:
+    </td>
+    <td>
+      <input type="button" id="evaluatemswlsw" value="Evaluate MSW/LSW">
+    </td>
+  </tr>
+
+
+  <tr> <td> Last LSW evaluated: </td> <td id="lastlsw"> N/A </td> <td id="lswhex"> </td> </tr>
+  <tr> <td> Last MSW evaluated: </td> <td id="lastmsw"> N/A </td> <td id="mswhex"> </td> </tr>
+
+</table>
+<hr>
+<table border="1">
+
+  <tr> <th>Bits</th>  <th>Meaning</th>      <th>Value</th> </tr>
+
+  <tr> <td>31</td>    <td>Sign</td>         <td id="elmsign"></td> </tr>
+  <tr> <td>30-23</td> <td>Exponent+127</td> <td id="elmexpo"></td> </tr>
+  <tr> <td>22-0</td>  <td>Mantissa</td>     <td id="elmmant"></td> </tr>
+  <tr> <td>All</td>   <td>FP Value</td>     <td id="elmfpv"></td>  </tr>
+
+</table>
+<script type="text/javascript">
+
+  tr = 0;   // Global
+
+  mask23 = (1<<23) - 1;
+  mask16 = (1<<16) - 1;
+  mask8 = (1<<8) - 1;
+  mask7 = (1<<7) -1;
+
+  function hex( ui, bits ) {
+    var rtn = "";
+    var lclUi = ui
+    for ( i=0; i<bits; i+=4 ) {
+      rtn = "0123456789ABCDEF".substr(lclUi&15, 1) + rtn;
+      lclUi >>= 4;
+    }
+    return rtn;
+}
+
+  function addth( s ) { tr.append( $( "<th></th>").html( s ) ); }
+
+  function addtd( s, argsArg ) {
+    var args = argsArg==null ? { } : argsArg;
+    var bits = args["bits"];
+    var sOut;
+    if (bits==null) {
+      sOut = s;
+    } else {
+      var ui = s;
+      var si = ui - ( (ui&(1<<(bits-1))) ? (1<<bits) : 0 );
+      sOut = "<ul>"
+             + "<li>signed " + bits + "-bit integer = " + si + "</li>"
+             + "<li>unsigned " + bits + "-bit integer = " + ui + "</li>"
+             + "<li>Hexadecimal " + bits + "-bit integer = " + hex(ui,bits) + "</li>"
+             + "</ul>"
+             ;
+    }
+    tr.append( $( "<td></td>").html( sOut ).addClass( args["wrap"]==null ? "nowrap" : "null"  ) );
+  }
+
+  function getint( flote ) { return parseInt( " " + Math.floor(flote) ); }
+
+  function evaluate() {
+    var sign;
+    var exponent = 0;
+    var mantissa = 0;
+    var lsw = 0;
+    var msw = 0;
+    var endval = parseFloat( $("#float").val() );
+    var startval;
+    var tdtemplate = "<td></td>";
+    var trid;
+    var poundtrid;
+
+    $("#floatingbits").children("tr").each( function() { $(this).remove(); } );
+
+    for ( var bit = 31; bit>-1; --bit ) { 
+      trid = "tr" + bit;
+      poundtrid = "#" + trid;
+
+      startval = endval;
+
+      $("#floatingbits").append( $("<tr></tr>").attr("id",trid) );
+      tr = $(poundtrid);
+
+      var sbit = bit;
+
+      if ( bit>30 ) {
+        // Sign bit
+        if ( startval < 0.0 ) {
+          test = "" + startval + " is negative";
+          sign = 1;
+          endval = -startval;
+          lsw |= 1<<15;
+        } else {
+          test = "" + startval + " is non-negative";
+          sign = 0;
+        }
+        test += "; set sign bit to " + sign
+
+      } else if ( bit>22 ) {
+        // Exponent bits
+        sbit = "30-23";
+        var L = Math.log(startval) / Math.log(2.0);
+        var iL = getint(L)
+        exponent = iL + 127;
+        endval = startval / Math.pow( 2.0, iL );
+        test = "log<sub>2</sub>(" + startval + ") = " + L 
+               + "<ul>"
+               + "<li>Setting exponent = (127 + " + iL + ")</li>"
+               + ( exponent>127 ? ("<li>Halved value " + iL + " times to range [1-2) = " + endval + "</li>")
+                 : exponent<127 ? ("<li>Doulbed value " + (-iL) + " times to range [1-2)) = " + endval + "</li>")
+                                : ""
+                 )
+               + "<li>Removed leading 1. from value</li>"
+               + "</ul>"
+               ;
+        endval -= 1.0;
+        lsw |= exponent<<7;
+        bit = 23;
+
+      } else {
+        // Mantissa bits
+        endval = getint( Math.round( startval * (1<<23) ) ) ;
+        test = "Doubled value 23 times and rounded to nearest whole digit"
+               + "<ul>"
+               + "<li>Masked off high 7 bits [22:16] (" + (endval & (mask7 << 16)) + ", shifted 16 bits to the right (" + (endval >> 16) + ") and appended them to LSW</li>"
+               + "<li>Put low 16 bits [15:0] (" + ( endval & mask16 ) + ") into MSW</li>"
+               + "</ul>"
+               ;
+        lsw |= endval >> 16;
+        msw = endval & mask16;
+        sbit = "22-0"
+        bit = 0;
+      }
+
+      addtd( sbit );
+      addtd( sign );
+      addtd( exponent );
+      addtd( mantissa );
+      addtd( lsw, {"bits":16} );
+      addtd( msw, {"bits":16} );
+      addtd( startval );
+      addtd( test, { "wrap":true} );
+      if ( bit==0 ) { endval = "" + endval + "<br>(Hex:  " + hex(endval,23) + ")"; }
+      addtd( endval );
+
+      $("#lsw").val( lsw );
+      $("#msw").val( msw );
+    }
+
+    $("#floatingbits").append( $("<tr></tr>").attr("id","sep") );
+    tr = $("#sep");
+    addth( "Bits" );
+    addth( "32-bit signed integer" );
+    addth( "&nbsp;" );
+    addth( "Byte Order" );
+    addth( "Four-bytes as hex" );
+
+    var i32 = (lsw<<16) | msw;
+    $("#floatingbits").append( $("<tr></tr>").attr("id","lsb") );
+    $("#floatingbits").append( $("<tr></tr>").attr("id","msb") );
+
+    tr = $("#lsb");
+    addtd( "31-0" );
+    addtd( i32 );
+    addtd( "&nbsp;" );
+    addtd( "LSByte 1st" );
+    var s = ""
+    for ( var i=0; i<4; ++i) { s +=  " " + hex( i32>>(i*8), 8 ); }
+    addtd( s );
+
+    tr = $("#msb");
+    addtd( "31-0" );
+    addtd( i32 );
+    addtd( "&nbsp;" );
+    addtd( "MSByte 1st" );
+    s = ""
+    for ( var i=4; i--; ) { s += " " + hex( i32>>(i*8), 8 ); }
+    addtd( s );
+
+    return;
+
+  }  // end of function evaluate()
+
+  function evaluatemswlsw() {
+  var slsw = $("#lsw").val();
+  var smsw = $("#msw").val();
+
+    if ( ! ( slsw.match( /^([-0-9][0-9]*|0[Xx][0-9a-fA-F]+)$/ ) ) ) { $("#lswhex").html( "Bad value" ); return; }
+    if ( ! ( smsw.match( /^([-0-9][0-9]*|0[Xx][0-9a-fA-F]+)$/ ) ) ) { $("#mswhex").html( "Bad value" ); return; }
+
+    var lsw = parseInt( slsw ) & mask16;
+    var msw = parseInt( smsw ) & mask16;
+
+    $("#lastlsw").html( lsw );
+    $("#lastmsw").html( msw );
+    $("#lswhex").html( "0x" + hex(lsw,16) );
+    $("#mswhex").html( "0x" + hex(msw,16) );
+
+    //<tr> <td>31</td>    <td>Sign</td>         <td id="elmsign"></td> </tr>
+    //<tr> <td>30-23</td> <td>Exponent+127</td> <td id="elmexpo"></td> </tr>
+    //<tr> <td>22-0</td>  <td>Mantissa</td>     <td id="elmmant"></td> </tr>
+    //<tr> <td>All</td>   <td>FP Value</td>     <td id="elmfpv"></td>  </tr>
+
+    var selmsign;
+    var elmsign;
+    var elmexpo;
+    var elmmant;
+    var elmfpv;
+
+    // Sign
+    if ( lsw & (1<<15) ) {
+      selmsign = "1 (-)";
+      elmsign = -1.0;
+    } else {
+      selmsign = "0 (+)";
+      elmsign = +1.0;
+    }
+
+    // Exponent
+    elmexpo = (lsw>>7) & mask8;
+
+    elmmant = ((lsw<<16) | msw) & mask23;
+    mantbase = elmmant / parseFloat( "" + (1<<23) );
+
+    $("#elmsign").html( selmsign );
+    $("#elmexpo").html( elmexpo );
+    $("#elmmant").html( elmmant 
+                      + "<br>0x" + hex(elmmant,23)
+                      + "<br>" + mantbase
+                      + "<br>" + (1.0+mantbase) 
+                      );
+    $("#elmfpv").html( elmsign * (1.0+mantbase) * Math.pow( 2.0, elmexpo-127 ) );
+
+    return;
+  }
+
+  // Buttons
+  $("#evaluate").on( "click", evaluate);
+  $("#evaluatemswlsw").on( "click", evaluatemswlsw);
+
+</script>
+</html>
+
+
