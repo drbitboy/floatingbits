@@ -20,7 +20,7 @@ Usage
 
   Open floatingbits.html in a Web Browser; file 
 
-    ./scripts/jquery-1.9.0.min.js
+    ./scripts/jquery-1.9.1.min.js
 
   may need to be accessible and in the sub-directory scripts/, which is a
   sibling of floatingbits.html.
