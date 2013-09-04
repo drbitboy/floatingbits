@@ -23,7 +23,6 @@ Usage
 Details
 =======
 
-
 Here's the full conversion from 28876 and 16709 to floating-point (FP)
 value 12.34.
 
@@ -87,3 +86,17 @@ FP = [SIGN]  MANTISSA * 2^EXPONENT
 
 - N.B. implicit leading 1-bit in MANTISSA is provided by adding +126
 instead of +127 in MANTISSA formula above
+
+
+Manifest
+========
+
+  floatingbits.html                   HTML/Javascript interactive converter
+  scripts/jquery-1.9.1.min.js         jQuery if web version not found
+
+  Integer_to_IEEE754_Convert.xlsx     Original workbook converter
+  Integer_to_IEEE754_Convert_FV4.ods  LibreOffice spreadsheet converter
+  Integer_to_IEEE754_Convert_FV4.xls  eXcel XP copy of .ods spreadsheet
+  bits.py                             Python script converter
+  Makefile                            To make ZIP file for distribution
+  readme.md                           This file
