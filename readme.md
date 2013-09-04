@@ -1,7 +1,11 @@
 Summary
 =======
 
-  Rockwell Automation PLC-5 utility
+  ProSoft/ModBus/Rockwell Automation PLC-5 utility
+
+  Filling in some details related to this ProSoft KnowledgeBase article:
+
+  - http://www.prosoft-technology.com/kb/article.php?id=449
 
   Emulate conversion from a one-element, IEEE-754 32-floating point file
   and a two-element, 16-bit integer file, and vice versa.  By emulate is
