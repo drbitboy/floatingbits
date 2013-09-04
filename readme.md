@@ -9,6 +9,8 @@ Summary
   vice versa.
 
 
+  N.B. does not work for 0.0 and other special values (Inf, NaN, etc.).
+
 Usage
 =====
 
