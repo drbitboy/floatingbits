@@ -1,3 +1,29 @@
+Summary
+=======
+
+  Rockwell Automation PLC-5 utility
+
+  Emulate conversion from a one-element, IEEE-754 32-floating point file
+  and a two-element, 16-bit integer file, and vice versa.  By emulate is
+  meant to show what integer values result from a floating point value, and
+  vice versa.
+
+
+Usage
+=====
+
+  Open floatingbits.html in a Web Browser; file 
+
+    ./scripts/jquery-1.9.0.min.js
+
+  needs to be accessible and in the directory scripts/ which is a sibling
+  of floatingbits.html.
+
+
+Details
+=======
+
+
 Here's the full conversion from 28876 and 16709 to floating-point (FP) value
 12.34.
 
