@@ -16,16 +16,16 @@ Usage
 
     ./scripts/jquery-1.9.0.min.js
 
-  needs to be accessible and in the directory scripts/ which is a sibling
-  of floatingbits.html.
+  may need to be accessible and in the sub-directory scripts/, which is a
+  sibling of floatingbits.html.
 
 
 Details
 =======
 
 
-Here's the full conversion from 28876 and 16709 to floating-point (FP) value
-12.34.
+Here's the full conversion from 28876 and 16709 to floating-point (FP)
+value 12.34.
 
 
 Let's say LSW and MSW are in Binary file 4 with 2 elements  (like your B3
@@ -49,8 +49,8 @@ number (interpreting 16-bits as a signed Int).
 exponent value of zero has a special meaning), minus 127 to give base-two
 exponent
  - Int(16709 / 128) - 127 = 130 - 127 = 3
- - 2 to the 3rd power = 8, so the number is between 8 and 16 (8*2) (still so
-far so good).
+ - 2 to the 3rd power = 8, so the number is between 8 and 16 (8*2) (still
+so far so good).
 3. B4:0/6 to B4:0/0 and B4:1/15 to B4:1/0 => (7 + 16 =) 23 bits to
 represent mantissa-equivalent = bits after binamal (analogous to decimal)
 point with an implied leading 1 bit set before the binamal point
